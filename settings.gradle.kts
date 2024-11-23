@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "ce"
 include(":app")
+include(":ce-api")

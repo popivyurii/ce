@@ -1,5 +1,5 @@
 [versions]
-agp = "8.8.0-alpha06"
+agp = "8.9.0-alpha03"
 kotlin = "2.0.21"
 coreKtx = "1.13.1"
 junit = "4.13.2"
@@ -17,12 +17,15 @@ ksp = "2.0.21-1.0.25"
 kotlinx-coroutines = "1.8.1-Beta"
 kotlinx-coroutines-android = "1.7.3"
 kotlinx-serialization = "1.6.3"
-annotation = "1.8.0-beta01"
+annotation = "1.9.0"
 kotlinx-serialization-converter ="2.11.0"
 kotlinx-datetime = "0.6.0"
+jetbrainsKotlinJvm = "2.0.21"
 
 
 [libraries]
+annotation = { module = "androidx.annotation:annotation", version.ref = "annotation" }
+
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
@@ -67,6 +70,8 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp"}
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt"}
+jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "jetbrainsKotlinJvm" }
+kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
 [bundles]
 compose-ui = ["activity-compose",  "ui", "ui-graphics", "ui-tooling", "ui-tooling-preview", "ui-test-manifest", "ui-test-junit4"]
