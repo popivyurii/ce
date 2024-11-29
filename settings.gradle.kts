@@ -23,3 +23,4 @@ rootProject.name = "ce"
 include(":app")
 include(":core:ce-api")
 include(":core:database")
+include(":core:data")

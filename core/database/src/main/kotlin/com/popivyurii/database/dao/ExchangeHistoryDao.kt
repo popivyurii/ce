@@ -3,6 +3,7 @@ package com.popivyurii.database.dao
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import com.popivyurii.database.model.ExchangeHistoryDbo
 
 @Dao
 interface ExchangeHistoryDao {
@@ -18,4 +19,11 @@ interface ExchangeHistoryDao {
     suspend fun getMostRecentTransaction(
         fromCurrencyCode: String, toCurrencyCode: String
     ): ExchangeHistoryDao?
+
+
+    suspend fun insertTransaction(transaction: ExchangeHistoryDbo)
+
+
+    @Query("SELECT COUNT(*) FROM exchange_history")
+    suspend fun getTotalTransactionCount(): Int
 }

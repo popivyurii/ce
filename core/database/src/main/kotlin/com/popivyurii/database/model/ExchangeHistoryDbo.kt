@@ -10,6 +10,7 @@ class ExchangeHistoryDbo(
     val fromCurrencyCode: String,
     val toCurrencyCode: String,
     val amount: Double,
+    val rate: Double,
     val convertedAmount: Double,
     val commissionFee: Double,
     val timestamp: Long = System.currentTimeMillis() // Default to current time

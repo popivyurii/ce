@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import com.popivyurii.database.model.WalletDbo
 
 
@@ -19,6 +20,14 @@ interface WalletDao {
 
     @Query("SELECT * FROM wallet")
     suspend fun getAllBalances(): List<WalletDbo>
+
+    @Query("UPDATE wallet SET balance = balance + :amount WHERE currencyCode = :currencyCode")
+    suspend fun adjustBalance(currencyCode: String, amount: Double)
+
+    @Transaction
+    suspend fun <R> performTransaction(block: suspend () -> R): R {
+        return block()
+    }
 
     @Delete
     suspend fun delete(wallet: WalletDbo)
