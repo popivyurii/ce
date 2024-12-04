@@ -7,10 +7,14 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import com.popivyurii.database.model.WalletDbo
+import kotlinx.coroutines.flow.Flow
 
 
 @Dao
 interface WalletDao {
+
+    @Query("SELECT * FROM wallet")
+    fun observeAllBalances(): Flow<List<WalletDbo>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertOrUpdate(wallet: WalletDbo)

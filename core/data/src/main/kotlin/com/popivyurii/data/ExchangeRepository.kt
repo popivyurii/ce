@@ -6,9 +6,16 @@ import com.popivyurii.database.dao.ExchangeRateDao
 import com.popivyurii.database.dao.WalletDao
 import com.popivyurii.database.model.ExchangeHistoryDbo
 import com.popivyurii.database.model.ExchangeRatesDbo
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
@@ -18,6 +25,39 @@ public class ExchangeRepository(
     private val exchangeRateDao: ExchangeRateDao,
     private val ceApi: CEApi,
 ) {
+
+    private val _balances = MutableStateFlow<Map<String, Double>>(emptyMap())
+    public val balances: StateFlow<Map<String, Double>> get() = _balances
+
+    private val _currencies = MutableStateFlow<List<String>>(emptyList())
+    public val currencies: StateFlow<List<String>> get() = _currencies
+
+    init {
+        CoroutineScope(Dispatchers.IO).launch {
+
+            launch {
+                walletDao.observeAllBalances()
+                    .map { list -> list.associate { it.currencyCode to it.balance } }
+                    .collect { balanceMap ->
+                        _balances.value = balanceMap
+                    }
+            }
+
+            launch {
+                combine(
+                    walletDao.observeAllBalances().map { list -> list.map { it.currencyCode } },
+                    exchangeRateDao.observeExchangeRates("USD") // TODO: Replace "USD" with your app base currency
+                        .map { ratesDbo -> ratesDbo?.rates?.keys?.toList() ?: emptyList() }
+                ) { walletCurrencies, exchangeCurrencies ->
+                    (walletCurrencies + exchangeCurrencies).distinct()
+                }.collect { currencyList ->
+                    _currencies.value = currencyList
+                }
+            }
+        }
+    }
+
+
     public suspend fun getBalance(currencyCode: String): Double {
         return walletDao.getBalance(currencyCode)?.balance ?: 0.0
     }
