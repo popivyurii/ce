@@ -18,8 +18,11 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
 
+        buildConfigField("String", "BASE_URL", "\"https://developers.paysera.com/\"")
+
+    }
+    
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -69,4 +72,10 @@ dependencies {
     androidTestImplementation(libs.ui.test.junit4)
     debugImplementation(libs.ui.tooling)
     debugImplementation(libs.ui.test.manifest)
+
+    implementation(project(":feature:main:ui"))
+    implementation(project(":core:ce-api"))
+    implementation(project(":core:data"))
+    implementation(project(":core:database"))
+
 }

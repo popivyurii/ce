@@ -9,7 +9,7 @@ kotlin {
 }
 
 android {
-    namespace = "com.popivyurii.ce.database"
+    namespace = "com.popivyurii.ce.main"
     compileSdk = 34
 
     defaultConfig {

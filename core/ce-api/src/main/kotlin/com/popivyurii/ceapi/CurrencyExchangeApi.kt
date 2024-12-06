@@ -12,15 +12,15 @@ import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import retrofit2.create
 import retrofit2.http.GET
 
-interface CEApi {
+interface CurrencyExchangeApi {
 
     @GET("/tasks/api/currency-exchange-rates")
     suspend fun getExchangeRates(): Result<ExchangeRates>
 }
 
-fun CEApiImpl(
+fun CurrencyExchangeApi(
     baseUrl: String
-): CEApi {
+): CurrencyExchangeApi {
     return retrofit(baseUrl, json = Json).create()
 }
 

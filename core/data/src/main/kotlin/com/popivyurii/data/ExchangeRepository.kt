@@ -1,9 +1,8 @@
 package com.popivyurii.data
 
-import com.popivyurii.ceapi.CEApi
+import com.popivyurii.ceapi.CurrencyExchangeApi
+import com.popivyurii.database.CurrencyExchangerDatabase
 import com.popivyurii.database.dao.ExchangeHistoryDao
-import com.popivyurii.database.dao.ExchangeRateDao
-import com.popivyurii.database.dao.WalletDao
 import com.popivyurii.database.model.ExchangeHistoryDbo
 import com.popivyurii.database.model.ExchangeRatesDbo
 import kotlinx.coroutines.CoroutineScope
@@ -18,12 +17,11 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
-public class ExchangeRepository(
-    private val walletDao: WalletDao,
-    private val exchangeHistoryDao: ExchangeHistoryDao,
-    private val exchangeRateDao: ExchangeRateDao,
-    private val ceApi: CEApi,
+public class ExchangeRepository @Inject constructor(
+    private val database: CurrencyExchangerDatabase,
+    private val ceApi: CurrencyExchangeApi,
 ) {
 
     private val _balances = MutableStateFlow<Map<String, Double>>(emptyMap())
@@ -36,7 +34,7 @@ public class ExchangeRepository(
         CoroutineScope(Dispatchers.IO).launch {
 
             launch {
-                walletDao.observeAllBalances()
+                database.walletDao.observeAllBalances()
                     .map { list -> list.associate { it.currencyCode to it.balance } }
                     .collect { balanceMap ->
                         _balances.value = balanceMap
@@ -45,8 +43,8 @@ public class ExchangeRepository(
 
             launch {
                 combine(
-                    walletDao.observeAllBalances().map { list -> list.map { it.currencyCode } },
-                    exchangeRateDao.observeExchangeRates("USD") // TODO: Replace "USD" with your app base currency
+                    database.walletDao.observeAllBalances().map { list -> list.map { it.currencyCode } },
+                    database.exchangeRateDao.observeExchangeRates("USD") // TODO: Replace "USD" with your app base currency
                         .map { ratesDbo -> ratesDbo?.rates?.keys?.toList() ?: emptyList() }
                 ) { walletCurrencies, exchangeCurrencies ->
                     (walletCurrencies + exchangeCurrencies).distinct()
@@ -59,11 +57,11 @@ public class ExchangeRepository(
 
 
     public suspend fun getBalance(currencyCode: String): Double {
-        return walletDao.getBalance(currencyCode)?.balance ?: 0.0
+        return database.walletDao.getBalance(currencyCode)?.balance ?: 0.0
     }
 
     public suspend fun getExchangeHistory(): List<ExchangeHistoryDao> {
-        return exchangeHistoryDao.getAllTransactions()
+        return database.exchangeHistoryDao.getAllTransactions()
     }
 
     public suspend fun convertCurrency(
@@ -72,7 +70,7 @@ public class ExchangeRepository(
         amount: Double
     ): Result<String> {
 
-        val fromBalance = walletDao.getBalance(fromCurrency)?.balance ?: 0.0
+        val fromBalance = database.walletDao.getBalance(fromCurrency)?.balance ?: 0.0
         if (fromBalance < amount) return Result.failure(IllegalArgumentException("Insufficient funds"))
 
         val rateResult = fetchExchangeRate(fromCurrency, toCurrency).first()
@@ -86,17 +84,17 @@ public class ExchangeRepository(
 
         val convertedAmount = amount * rate
 
-        val exchangeCount = exchangeHistoryDao.getTotalTransactionCount()
+        val exchangeCount = database.exchangeHistoryDao.getTotalTransactionCount()
         val commission = if (exchangeCount >= 5) 0.007 * amount else 0.0
         val netAmount = amount + commission
 
         if (fromBalance < netAmount) return Result.failure(IllegalArgumentException("Insufficient funds for commission"))
 
         // Perform transaction atomically.
-        walletDao.performTransaction {
-            walletDao.adjustBalance(fromCurrency, -netAmount)
-            walletDao.adjustBalance(toCurrency, convertedAmount)
-            exchangeHistoryDao.insertTransaction(
+        database.walletDao.performTransaction {
+            database.walletDao.adjustBalance(fromCurrency, -netAmount)
+            database.walletDao.adjustBalance(toCurrency, convertedAmount)
+            database.exchangeHistoryDao.insertTransaction(
                 ExchangeHistoryDbo(
                     fromCurrencyCode = fromCurrency,
                     toCurrencyCode = toCurrency,
@@ -116,7 +114,7 @@ public class ExchangeRepository(
 
     private suspend fun fetchExchangeRate(fromCurrency: String, toCurrency: String): Flow<Result<Double>> = flow {
 
-        val cachedRates = exchangeRateDao.getExchangeRates(fromCurrency)
+        val cachedRates = database.exchangeRateDao.getExchangeRates(fromCurrency)
 
         if (cachedRates != null && System.currentTimeMillis() - cachedRates.timestamp < cacheExpirationTime) {
             // If cached rates are fresh, return the rate from Room
@@ -136,7 +134,7 @@ public class ExchangeRepository(
                         val rate = exchangeRates.rates?.get(toCurrency)
                         if (rate != null) {
                             // Cache the fetched rates
-                            exchangeRateDao.insertExchangeRates(
+                            database.exchangeRateDao.insertExchangeRates(
                                 ExchangeRatesDbo(
                                     baseCurrency = fromCurrency,
                                     rates = exchangeRates.rates!!,
